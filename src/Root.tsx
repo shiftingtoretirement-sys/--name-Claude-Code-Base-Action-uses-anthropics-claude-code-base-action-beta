@@ -13,10 +13,23 @@ import {
   QUESTIONS,
   CARD_DURATION,
 } from "./scenes/ThreeQuestions";
+import {
+  SoutheastMap,
+  SE_MAP_DURATION,
+  SE_MAP_FPS,
+} from "./scenes/SoutheastMap";
 
 export const RemotionRoot: React.FC = () => {
   return (
     <>
+      <Composition
+        id="SoutheastMap"
+        component={SoutheastMap}
+        durationInFrames={SE_MAP_DURATION}
+        fps={SE_MAP_FPS}
+        width={1920}
+        height={1080}
+      />
       <Composition
         id="ShiftingToRetirement"
         component={ShiftingToRetirement}

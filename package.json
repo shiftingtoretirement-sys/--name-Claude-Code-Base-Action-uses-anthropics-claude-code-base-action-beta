@@ -10,10 +10,15 @@
     "@remotion/google-fonts": "^4.0.487",
     "@remotion/tailwind-v4": "4.0.487",
     "@remotion/transitions": "^4.0.487",
+    "@types/d3-geo": "^3.1.1",
+    "@types/topojson-client": "^3.1.5",
+    "d3-geo": "^3.1.1",
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "remotion": "4.0.487",
-    "tailwindcss": "4.0.0"
+    "tailwindcss": "4.0.0",
+    "topojson-client": "^3.1.0",
+    "us-atlas": "^3.0.1"
   },
   "devDependencies": {
     "@remotion/eslint-config-flat": "4.0.487",
@@ -27,7 +32,9 @@
     "dev": "remotion studio",
     "build": "remotion bundle",
     "upgrade": "remotion upgrade",
-    "lint": "eslint src && tsc"
+    "lint": "eslint src && tsc",
+    "map:gen": "node scripts/generate-map.mjs",
+    "render:map": "remotion render SoutheastMap out/southeast-map.mp4 --codec=h264"
   },
   "sideEffects": [
     "*.css"

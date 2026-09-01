@@ -1,7 +1,9 @@
 import React from "react";
-import { Composition } from "remotion";
+import { AbsoluteFill, Composition, useCurrentFrame, interpolate } from "remotion";
 import { FPS, DURATION_FRAMES, WIDTH, HEIGHT } from "./theme";
 import { SceneFrame } from "./components/SceneFrame";
+import { MediaClip } from "./components/MediaClip";
+import { FilmStock } from "./components/FilmStock";
 import "./fonts";
 
 import { GardenHose } from "./scenes/GardenHose";
@@ -80,9 +82,44 @@ const REEL = [
   },
 ];
 
+/** A single photo animated for 5s with the Super-8 / 70s-80s film grade. */
+const PhotoFilm: React.FC<{
+  src: string;
+  type?: "image" | "video";
+  kenBurns?: React.ComponentProps<typeof MediaClip>["kenBurns"];
+  halation?: { x: number; y: number; opacity: number };
+}> = ({ src, type, kenBurns, halation }) => {
+  const frame = useCurrentFrame();
+  const fade = interpolate(frame, [0, 10, 140, 150], [0, 1, 1, 0], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
+  return (
+    <AbsoluteFill style={{ background: "#000" }}>
+      <AbsoluteFill style={{ opacity: fade }}>
+        <FilmStock config={{ intensity: 1, halation, vignette: 0.66, weave: 1 }}>
+          <MediaClip src={src} type={type} kenBurns={kenBurns} />
+        </FilmStock>
+      </AbsoluteFill>
+    </AbsoluteFill>
+  );
+};
+
 export const RemotionRoot: React.FC = () => {
   return (
     <>
+      {/* 5-second animated photo — Super-8 / 70s-80s grade */}
+      <Composition
+        id="BMX-Jump"
+        durationInFrames={150}
+        fps={FPS}
+        width={WIDTH}
+        height={HEIGHT}
+        component={PhotoFilm}
+        defaultProps={{
+          src: "media/bmx-jump.jpg",
+          type: "image" as const,
+          kenBurns: { from: 1.05, to: 1.17, originX: 42, originY: 40, panX: -22, panY: 6 },
+          halation: { x: 62, y: 14, opacity: 0.26 },
+        }}
+      />
       {REEL.map(({ id, index, title, caption, halation, Art }) => (
         <Composition
           key={id}

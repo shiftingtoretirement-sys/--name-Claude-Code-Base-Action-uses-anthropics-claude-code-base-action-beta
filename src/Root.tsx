@@ -4,6 +4,7 @@ import { FPS, DURATION_FRAMES, WIDTH, HEIGHT } from "./theme";
 import { SceneFrame } from "./components/SceneFrame";
 import { MediaClip } from "./components/MediaClip";
 import { FilmStock } from "./components/FilmStock";
+import { FishingSunset } from "./scenes/FishingSunset";
 import "./fonts";
 
 import { GardenHose } from "./scenes/GardenHose";
@@ -102,6 +103,25 @@ const PhotoFilm: React.FC<{
   );
 };
 
+/** Cinemagraph wrapper: a scene component (with its own internal motion) under
+ * a stable film grade — no sweeping light leaks, so the lighting holds. */
+const Cinemagraph: React.FC<{
+  Scene: React.FC;
+  halation?: { x: number; y: number; opacity: number };
+}> = ({ Scene, halation }) => {
+  const frame = useCurrentFrame();
+  const fade = interpolate(frame, [0, 12, 138, 150], [0, 1, 1, 0], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
+  return (
+    <AbsoluteFill style={{ background: "#000" }}>
+      <AbsoluteFill style={{ opacity: fade }}>
+        <FilmStock config={{ intensity: 0.82, halation, vignette: 0.62, weave: 0.5, leaks: false, grain: 0.12 }}>
+          <Scene />
+        </FilmStock>
+      </AbsoluteFill>
+    </AbsoluteFill>
+  );
+};
+
 export const RemotionRoot: React.FC = () => {
   return (
     <>
@@ -119,6 +139,16 @@ export const RemotionRoot: React.FC = () => {
           kenBurns: { from: 1.05, to: 1.17, originX: 42, originY: 40, panX: -22, panY: 6 },
           halation: { x: 62, y: 14, opacity: 0.26 },
         }}
+      />
+
+      {/* 5-second cinemagraph — rippling sunset water, stable lighting */}
+      <Composition
+        id="Fishing-Sunset"
+        durationInFrames={150}
+        fps={FPS}
+        width={WIDTH}
+        height={HEIGHT}
+        component={() => <Cinemagraph Scene={FishingSunset} halation={{ x: 86, y: 26, opacity: 0.2 }} />}
       />
       {REEL.map(({ id, index, title, caption, halation, Art }) => (
         <Composition

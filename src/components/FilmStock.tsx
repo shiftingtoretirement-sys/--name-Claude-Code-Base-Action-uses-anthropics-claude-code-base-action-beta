@@ -108,10 +108,12 @@ export type FilmConfig = {
   vignette?: number;
   gate?: boolean;
   weave?: number;
+  leaks?: boolean; // sweeping light leaks — turn off to keep lighting stable
+  grain?: number; // grain opacity override
 };
 
 export const FilmStock: React.FC<{ children: React.ReactNode; config?: FilmConfig }> = ({ children, config = {} }) => {
-  const { intensity = 1, halation = { x: 50, y: 24, opacity: 0.24 }, vignette = 0.7, gate = false, weave = 1 } = config;
+  const { intensity = 1, halation = { x: 50, y: 24, opacity: 0.24 }, vignette = 0.7, gate = false, weave = 1, leaks = true, grain = 0.16 } = config;
   const frame = useCurrentFrame();
 
   // Projector gate weave: small translate/rotate/scale breathing on the picture.
@@ -127,9 +129,9 @@ export const FilmStock: React.FC<{ children: React.ReactNode; config?: FilmConfi
       </AbsoluteFill>
       <ColorLayers intensity={intensity} />
       <Halation x={halation.x} y={halation.y} opacity={halation.opacity * intensity} />
-      <LightLeaks intensity={intensity} />
+      {leaks && <LightLeaks intensity={intensity} />}
       <Vignette strength={vignette} />
-      <Grain opacity={0.16 * intensity} />
+      <Grain opacity={grain * intensity} />
       <Flicker intensity={intensity} />
       {gate && <Super8Gate />}
     </AbsoluteFill>

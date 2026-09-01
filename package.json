@@ -1,0 +1,24 @@
+{
+  "name": "s2r-genx-graphics",
+  "version": "1.0.0",
+  "description": "Shifting to Retirement — Episode 08 'The Days Before'. Eight 8-second animated Gen-X motion graphics built with Remotion.",
+  "license": "UNLICENSED",
+  "private": true,
+  "scripts": {
+    "dev": "remotion studio",
+    "studio": "remotion studio",
+    "render:all": "node scripts/render-all.mjs",
+    "still": "remotion still",
+    "upgrade": "remotion upgrade"
+  },
+  "dependencies": {
+    "@remotion/cli": "4.0.290",
+    "react": "19.0.0",
+    "react-dom": "19.0.0",
+    "remotion": "4.0.290"
+  },
+  "devDependencies": {
+    "@types/react": "19.0.0",
+    "typescript": "5.5.4"
+  }
+}

@@ -1,165 +1,120 @@
 import React from "react";
-import { AbsoluteFill, useCurrentFrame, interpolate, spring, useVideoConfig, Easing } from "remotion";
+import { AbsoluteFill, useCurrentFrame, interpolate, Easing } from "remotion";
 import { palette, fonts, DURATION_FRAMES } from "../theme";
-import { Grain, Vignette, Scanlines, TrackingBar, VhsHud } from "./effects";
+import { FilmGrain, Vignette, Halation, LightLeak, Letterbox, GateWeave } from "./film";
 
 type SceneFrameProps = {
   children: React.ReactNode;
-  exhibit: string; // "EXHIBIT 03"
+  index: string; // "03"
   title: string; // "Lawn Darts"
-  caption: string; // the spoken line, deadpan
-  bg: [string, string]; // gradient stops
-  hudStamp?: string;
+  caption: string; // deadpan line
+  halation?: { x: number; y: number; opacity?: number };
   vignette?: number;
 };
 
 /**
- * Wraps every scene with the shared Gen-X aesthetic: gradient ground, film
- * grain, vignette, scanlines, VHS HUD, an animated lower-third title and a
- * bottom deadpan caption. Handles the global fade-in and fade-to-black.
+ * Cinematic archival wrapper: gate-weave on the art, then film treatment
+ * (halation, light leaks, vignette, grain, letterbox) and a restrained
+ * editorial title block. No chrome, no chunky type — the film does the work.
  */
 export const SceneFrame: React.FC<SceneFrameProps> = ({
   children,
-  exhibit,
+  index,
   title,
   caption,
-  bg,
-  hudStamp,
-  vignette = 0.55,
+  halation = { x: 50, y: 32 },
+  vignette = 0.72,
 }) => {
   const frame = useCurrentFrame();
-  const { fps } = useVideoConfig();
 
-  // Global open/close fades.
-  const fadeIn = interpolate(frame, [0, 14], [0, 1], { extrapolateRight: "clamp" });
-  const fadeOut = interpolate(frame, [DURATION_FRAMES - 16, DURATION_FRAMES], [1, 0], {
-    extrapolateLeft: "clamp",
-  });
+  const fadeIn = interpolate(frame, [0, 16], [0, 1], { extrapolateRight: "clamp" });
+  const fadeOut = interpolate(frame, [DURATION_FRAMES - 18, DURATION_FRAMES], [1, 0], { extrapolateLeft: "clamp" });
   const master = fadeIn * fadeOut;
 
-  // Lower-third slides in around 0.7s and holds.
-  const ltIn = spring({ frame: frame - 20, fps, config: { damping: 200, mass: 0.6 } });
-  const ltX = interpolate(ltIn, [0, 1], [-680, 0]);
-
-  // Caption typed reveal near the end of the first third.
-  const capProgress = interpolate(frame, [46, 92], [0, 1], {
-    extrapolateLeft: "clamp",
-    extrapolateRight: "clamp",
-    easing: Easing.out(Easing.cubic),
-  });
-  const capChars = Math.floor(caption.length * capProgress);
+  // Title rises slowly; caption follows.
+  const tRise = interpolate(frame, [22, 46], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: Easing.out(Easing.cubic) });
+  const cRise = interpolate(frame, [40, 66], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: Easing.out(Easing.cubic) });
+  const ruleGrow = interpolate(frame, [18, 54], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: Easing.inOut(Easing.cubic) });
 
   return (
-    <AbsoluteFill style={{ background: palette.night }}>
+    <AbsoluteFill style={{ background: palette.black }}>
       <AbsoluteFill style={{ opacity: master }}>
-        {/* Ground */}
-        <AbsoluteFill
-          style={{
-            background: `linear-gradient(160deg, ${bg[0]} 0%, ${bg[1]} 100%)`,
-          }}
-        />
+        {/* Art + projector weave + slow motion handled inside each scene */}
+        <GateWeave>{children}</GateWeave>
 
-        {/* Scene art */}
-        <AbsoluteFill>{children}</AbsoluteFill>
-
-        {/* Aged-photo treatment */}
+        {/* Film treatment */}
+        <Halation x={halation.x} y={halation.y} opacity={halation.opacity ?? 0.2} />
+        <LightLeak />
         <Vignette strength={vignette} />
-        <Scanlines />
-        <TrackingBar />
-        <Grain />
+        <FilmGrain />
 
-        {/* Lower third */}
-        <div
-          style={{
-            position: "absolute",
-            left: 72,
-            bottom: 150,
-            transform: `translateX(${ltX}px)`,
-            display: "flex",
-            flexDirection: "column",
-            gap: 6,
-          }}
-        >
-          <div
-            style={{
-              alignSelf: "flex-start",
-              background: palette.brandGold,
-              color: palette.ink,
-              fontFamily: fonts.mono,
-              fontWeight: 700,
-              fontSize: 26,
-              letterSpacing: 6,
-              padding: "6px 16px",
-              boxShadow: "0 6px 0 rgba(0,0,0,0.35)",
-            }}
-          >
-            {exhibit}
+        {/* Legibility scrim */}
+        <div style={{ position: "absolute", left: 0, right: 0, bottom: 0, height: 460, background: "linear-gradient(to top, rgba(8,5,2,0.9), rgba(8,5,2,0.4) 45%, rgba(8,5,2,0))", pointerEvents: "none" }} />
+
+        {/* Editorial title block */}
+        <div style={{ position: "absolute", left: 96, bottom: 92, maxWidth: 1400 }}>
+          {/* kicker */}
+          <div style={{ display: "flex", alignItems: "center", gap: 22, opacity: interpolate(frame, [10, 30], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" }) }}>
+            <span style={{ display: "inline-block", width: 54 * ruleGrow, height: 2, background: palette.gold }} />
+            <span style={{ fontFamily: fonts.sans, fontSize: 21, fontWeight: 600, letterSpacing: 6, color: palette.amber }}>
+              SHIFTING&nbsp;TO&nbsp;RETIREMENT
+            </span>
+            <span style={{ fontFamily: fonts.sans, fontSize: 21, fontWeight: 500, letterSpacing: 4, color: palette.faded }}>
+              EP.&nbsp;08 · THE DAYS BEFORE
+            </span>
           </div>
+
+          {/* title */}
           <div
             style={{
-              fontFamily: fonts.title,
+              marginTop: 14,
+              fontFamily: fonts.display,
+              fontWeight: 500,
+              fontSize: 104,
+              lineHeight: 1.0,
               color: palette.bone,
-              fontSize: 96,
-              lineHeight: 0.98,
-              fontWeight: 900,
-              letterSpacing: -1,
-              textShadow: "0 6px 0 rgba(0,0,0,0.45), 0 0 40px rgba(0,0,0,0.4)",
-              maxWidth: 1100,
+              transform: `translateY(${(1 - tRise) * 26}px)`,
+              opacity: tRise,
+              textShadow: "0 8px 40px rgba(0,0,0,0.6)",
             }}
           >
             {title}
           </div>
-        </div>
 
-        {/* Deadpan caption bar */}
-        <div
-          style={{
-            position: "absolute",
-            left: 0,
-            right: 0,
-            bottom: 0,
-            padding: "26px 76px 40px",
-            background: "linear-gradient(to top, rgba(10,7,3,0.86), rgba(10,7,3,0))",
-          }}
-        >
+          {/* caption */}
           <div
             style={{
-              fontFamily: fonts.serif,
+              marginTop: 18,
+              fontFamily: fonts.display,
               fontStyle: "italic",
-              color: palette.cream,
+              fontWeight: 400,
               fontSize: 40,
-              lineHeight: 1.2,
-              maxWidth: 1500,
-              minHeight: 52,
+              lineHeight: 1.3,
+              color: palette.cream,
+              maxWidth: 1180,
+              transform: `translateY(${(1 - cRise) * 18}px)`,
+              opacity: cRise * 0.96,
             }}
           >
-            {caption.slice(0, capChars)}
-            <span style={{ opacity: capChars < caption.length ? 1 : 0, color: palette.brandGold }}>▍</span>
+            {caption}
           </div>
         </div>
 
-        <VhsHud stamp={hudStamp} />
+        {/* Archival index, top-right */}
+        <div style={{ position: "absolute", top: 66, right: 100, textAlign: "right", opacity: master * 0.9 }}>
+          <div style={{ fontFamily: fonts.display, fontSize: 40, color: palette.gold, fontWeight: 500, lineHeight: 1 }}>
+            {index}
+            <span style={{ color: palette.faded, fontSize: 26 }}>&thinsp;/&thinsp;08</span>
+          </div>
+        </div>
+
+        {/* faint film-stock edge mark, bottom-right */}
+        <div style={{ position: "absolute", bottom: 96, right: 100, fontFamily: fonts.sans, fontSize: 17, letterSpacing: 4, color: palette.faded, opacity: master * 0.5 }}>
+          KODACHROME · 64
+        </div>
       </AbsoluteFill>
 
-      {/* Branding watermark */}
-      <div
-        style={{
-          position: "absolute",
-          top: 100,
-          right: 58,
-          opacity: master * 0.9,
-          textAlign: "right",
-          fontFamily: fonts.mono,
-          color: palette.brandGold,
-          fontSize: 22,
-          letterSpacing: 3,
-          fontWeight: 700,
-          textShadow: "0 2px 4px rgba(0,0,0,0.6)",
-        }}
-      >
-        SHIFTING TO RETIREMENT
-        <div style={{ color: palette.faded, fontSize: 16, letterSpacing: 2 }}>EP.08 · THE DAYS BEFORE</div>
-      </div>
+      <Letterbox bar={40} />
     </AbsoluteFill>
   );
 };

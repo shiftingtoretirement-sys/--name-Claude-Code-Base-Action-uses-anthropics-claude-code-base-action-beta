@@ -1,123 +1,118 @@
 import React from "react";
-import { useCurrentFrame, interpolate, spring, useVideoConfig } from "remotion";
-import { Stage } from "../components/effects";
+import { useCurrentFrame, interpolate } from "remotion";
+import { Stage, ContactShadow, usePushIn } from "../components/film";
 import { palette, fonts } from "../theme";
 
-/** EXHIBIT 08 — the one guy at work with the calculator watch. He "did stocks."
- * A wrist raised to camera, the calculator watch hero-lit, tiny digits ticking,
- * a ghostly stock line ticking up behind him. */
+/** EXHIBIT 08 — the calculator watch, hero macro on a dark reflective desk.
+ * The little LCD glows and computes; a stock line rises, far out of focus. */
 export const CalculatorWatch: React.FC = () => {
   const f = useCurrentFrame();
-  const { fps } = useVideoConfig();
-  const pop = spring({ frame: f - 10, fps, config: { damping: 15 } });
-
-  // Rolling "computed" figure on the LCD.
-  const val = Math.floor(interpolate(f, [20, 180], [1240, 3897], { extrapolateLeft: "clamp", extrapolateRight: "clamp" }));
+  const push = usePushIn(1.0, 1.06);
+  const val = Math.floor(interpolate(f, [16, 200], [1240, 3897], { extrapolateLeft: "clamp", extrapolateRight: "clamp" }));
   const lcd = val.toLocaleString();
-
-  // Buttons light up in sequence like he's punching numbers.
   const activeBtn = Math.floor(f / 6) % 20;
+  const spec = interpolate(f % 130, [0, 65, 130], [-1, 1, -1]);
 
-  // Rising stock line behind.
-  const pts = 40;
-  const linePath = React.useMemo(() => {
-    let d = "M0 700";
-    for (let i = 0; i <= pts; i++) {
-      const x = (i / pts) * 1920;
-      const base = 720 - (i / pts) * 360;
-      const jag = Math.sin(i * 0.9) * 40 + (i % 3) * 18;
-      d += ` L ${x} ${base + jag}`;
+  // faint blurred rising stock line, background
+  const line = React.useMemo(() => {
+    let d = "M-40 760";
+    for (let i = 0; i <= 30; i++) {
+      const x = (i / 30) * 2000 - 40;
+      const y = 780 - (i / 30) * 300 + Math.sin(i * 0.9) * 34 + (i % 3) * 14;
+      d += ` L ${x} ${y}`;
     }
     return d;
   }, []);
-  const lineDraw = interpolate(f, [10, 120], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
+  const draw = interpolate(f, [10, 130], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
 
   return (
     <Stage>
-      {/* office-ish backdrop from bg; ghost stock chart */}
-      <g opacity={0.22}>
-        {/* grid */}
-        {Array.from({ length: 10 }).map((_, i) => (
-          <line key={"h" + i} x1={0} y1={i * 108} x2={1920} y2={i * 108} stroke={palette.brandGold} strokeWidth={1} />
-        ))}
-        {Array.from({ length: 16 }).map((_, i) => (
-          <line key={"v" + i} x1={i * 128} y1={0} x2={i * 128} y2={1080} stroke={palette.brandGold} strokeWidth={1} />
-        ))}
-      </g>
-      <path
-        d={linePath}
-        fill="none"
-        stroke={palette.brandGold}
-        strokeWidth={8}
-        strokeDasharray={4000}
-        strokeDashoffset={4000 * (1 - lineDraw)}
-        opacity={0.5}
-      />
-      {/* up-arrow ticker chip */}
-      <g transform="translate(1560 210)" opacity={interpolate(f, [60, 80], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" })}>
-        <rect x={-110} y={-40} width={220} height={80} rx={12} fill={palette.avocado} />
-        <path d="M-70 20 L -40 -18 L -10 6 L 40 -30" stroke={palette.bone} strokeWidth={7} fill="none" />
-        <path d="M40 -30 l -22 2 l 8 20 Z" fill={palette.bone} />
-        <text x={60} y={12} fontFamily={fonts.mono} fontSize={30} fontWeight={700} fill={palette.bone}>+9%</text>
+      <defs>
+        <radialGradient id="cw-bg" cx="42%" cy="34%" r="80%">
+          <stop offset="0%" stopColor="#2a2213" />
+          <stop offset="60%" stopColor="#120d07" />
+          <stop offset="100%" stopColor="#070502" />
+        </radialGradient>
+        <linearGradient id="cw-desk" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#1a140b" />
+          <stop offset="100%" stopColor="#0a0704" />
+        </linearGradient>
+        <linearGradient id="cw-bezel" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stopColor="#6a6a72" />
+          <stop offset="30%" stopColor="#c9c9d2" />
+          <stop offset="52%" stopColor="#eef0f5" />
+          <stop offset="70%" stopColor="#4a4a52" />
+          <stop offset="100%" stopColor="#1c1c22" />
+        </linearGradient>
+        <linearGradient id="cw-case" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#3a3a42" />
+          <stop offset="100%" stopColor="#15151a" />
+        </linearGradient>
+        <linearGradient id="cw-lcd" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#a7c8a0" />
+          <stop offset="100%" stopColor="#7fa585" />
+        </linearGradient>
+      </defs>
+
+      <rect width={1920} height={1080} fill="url(#cw-bg)" />
+      <rect y={620} width={1920} height={460} fill="url(#cw-desk)" />
+
+      {/* far, blurred rising line + bokeh */}
+      <g filter="url(#dof)" opacity={0.55}>
+        <path d={line} fill="none" stroke={palette.gold} strokeWidth={10} strokeDasharray={3400} strokeDashoffset={3400 * (1 - draw)} opacity={0.5} />
+        {[[1500, 240], [1660, 360], [360, 300]].map(([x, y], i) => <circle key={i} cx={x} cy={y} r={70} fill={palette.amber} opacity={0.12} />)}
       </g>
 
-      {/* Forearm + wrist raised, sleeve rolled up */}
-      <g transform={`translate(960 640) scale(${0.92 + pop * 0.1})`} style={{ transformOrigin: "960px 640px" }}>
-        {/* arm */}
-        <path d="M-360 440 Q -120 300 40 120 L 300 300 Q 180 460 -120 620 Z" fill={palette.tan} />
-        {/* rolled shirt sleeve */}
-        <path d="M-360 440 Q -260 380 -190 470 L -300 640 Q -400 560 -360 440 Z" fill={palette.teal} />
-        <path d="M-300 430 q 60 30 120 20" stroke="#1f5252" strokeWidth={16} fill="none" />
-
-        {/* Watch band */}
-        <g transform="rotate(-32) translate(60 -40)">
-          <rect x={-150} y={-40} width={130} height={80} rx={16} fill={palette.charcoal} />
-          <rect x={140} y={-40} width={130} height={80} rx={16} fill={palette.charcoal} />
-          {/* watch body */}
-          <rect x={-140} y={-150} width={300} height={300} rx={40} fill="#2A2A30" />
-          <rect x={-140} y={-150} width={300} height={300} rx={40} fill="none" stroke="#4a4a52" strokeWidth={6} />
-          {/* LCD */}
-          <rect x={-104} y={-118} width={228} height={92} rx={10} fill="#8FB89A" />
-          <rect x={-104} y={-118} width={228} height={92} rx={10} fill="none" stroke="#20302a" strokeWidth={4} />
-          <text x={112} y={-48} textAnchor="end" fontFamily={fonts.mono} fontWeight={700} fontSize={64} fill="#12281a" letterSpacing={2}>
-            {lcd}
-          </text>
-          {/* button grid */}
-          {Array.from({ length: 20 }).map((_, i) => {
-            const col = i % 5;
-            const row = Math.floor(i / 5);
-            const bx = -104 + col * 46 + 14;
-            const by = 6 + row * 34;
-            const on = i === activeBtn;
-            return (
-              <rect
-                key={i}
-                x={bx}
-                y={by}
-                width={34}
-                height={24}
-                rx={5}
-                fill={on ? palette.brandGold : "#3a3a42"}
-                stroke="#111"
-                strokeWidth={1.5}
-              />
-            );
-          })}
+      <g transform={`translate(940 560) scale(${push}) translate(-940 -560)`}>
+       <g transform="translate(0 -72)">
+        {/* reflection beneath */}
+        <g transform="translate(940 980) scale(1 -1) translate(-940 -560)" opacity={0.18} filter="url(#dofSoft)">
+          <WatchBody lcd="" activeBtn={-1} spec={0} />
         </g>
-      </g>
+        <ContactShadow cx={940} cy={790} rx={360} ry={54} opacity={0.6} />
+        {/* band curving off into shadow */}
+        <path d="M700 560 C 520 470 470 640 300 700 L 320 790 C 520 740 640 720 760 720 Z" fill="#0f0f13" />
+        <path d="M1180 560 C 1360 470 1420 640 1600 700 L 1580 800 C 1360 740 1240 720 1120 720 Z" fill="#0f0f13" />
 
-      {/* Hero glint sweeping the watch */}
-      <g opacity={0.7}>
-        <rect
-          x={interpolate(f % 80, [0, 80], [700, 1200])}
-          y={380}
-          width={30}
-          height={360}
-          fill={palette.bone}
-          opacity={0.12}
-          transform="skewX(-18)"
-        />
+        <WatchBody lcd={lcd} activeBtn={activeBtn} spec={spec} />
+       </g>
       </g>
     </Stage>
   );
 };
+
+const WatchBody: React.FC<{ lcd: string; activeBtn: number; spec: number }> = ({ lcd, activeBtn, spec }) => (
+  <g transform="translate(940 560) rotate(-13)">
+    {/* case */}
+    <rect x={-260} y={-260} width={520} height={520} rx={70} fill="url(#cw-case)" />
+    {/* metal bezel */}
+    <rect x={-236} y={-236} width={472} height={472} rx={58} fill="url(#cw-bezel)" />
+    <rect x={-200} y={-200} width={400} height={400} rx={42} fill="#17171c" />
+
+    {/* LCD */}
+    <rect x={-176} y={-176} width={352} height={150} rx={12} fill="url(#cw-lcd)" />
+    <rect x={-176} y={-176} width={352} height={150} rx={12} fill="none" stroke="#25352a" strokeWidth={5} />
+    {/* ghost segments */}
+    <text x={150} y={-70} textAnchor="end" fontFamily={fonts.sans} fontWeight={600} fontSize={92} fill="#12281a" opacity={0.12} letterSpacing={4}>8,888</text>
+    {lcd && <text x={150} y={-70} textAnchor="end" fontFamily={fonts.sans} fontWeight={600} fontSize={92} fill="#12281a" letterSpacing={4}>{lcd}</text>}
+    <text x={-160} y={-140} fontFamily={fonts.sans} fontSize={20} fill="#12281a" opacity={0.6} letterSpacing={2}>CALC</text>
+
+    {/* button grid */}
+    {Array.from({ length: 20 }).map((_, i) => {
+      const col = i % 5, row = Math.floor(i / 5);
+      const bx = -176 + col * 74;
+      const by = 2 + row * 58;
+      const on = i === activeBtn;
+      return (
+        <g key={i}>
+          <rect x={bx} y={by} width={60} height={44} rx={9} fill={on ? "#caa23a" : "#26262c"} stroke="#0c0c10" strokeWidth={2} />
+          <rect x={bx + 6} y={by + 5} width={48} height={10} rx={5} fill="#fff" opacity={on ? 0.5 : 0.12} />
+        </g>
+      );
+    })}
+
+    {/* moving specular across bezel */}
+    <clipPath id="cw-clip"><rect x={-236} y={-236} width={472} height={472} rx={58} /></clipPath>
+    <rect x={-260 + (spec + 1) * 230} y={-300} width={70} height={620} fill="#ffffff" opacity={0.16} clipPath="url(#cw-clip)" transform="skewX(-16)" />
+  </g>
+);

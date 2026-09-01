@@ -5,10 +5,15 @@ YouTube episode *"The Days Before — How Gen X Figured Out Retirement With Zero
 Instructions."* Built with [Remotion](https://www.remotion.dev/).
 
 Each clip dramatizes one of the concrete Gen-X objects the script hangs its
-jokes on ("Rule 1 — anchor every beat to a concrete object"). They share a
-faded-photo / VHS aesthetic — film grain, vignette, scanlines, a camcorder
-HUD, an "EXHIBIT ##" lower-third, and a deadpan caption bar — plus the brand
-gold `#E8A317`. All are **1920×1080, 30 fps, 240 frames (8.0s)**.
+jokes on ("Rule 1 — anchor every beat to a concrete object"). Instead of
+cartoons, every object is a realistically-lit **hero shot** — the brass hose
+nozzle, the worn house key, a lawn dart standing in the grass — with a shared
+**cinematic archival-film** finish: warm faded-Kodachrome color, dramatic
+directional light, shallow depth-of-field, 16mm grain, halation glow, subtle
+light leaks, projector gate-weave and a thin letterbox. Titling is editorial —
+a Playfair Display serif title, an italic deadpan caption, and an Archivo
+kicker — with the brand gold `#E8A317` used sparingly. All are
+**1920×1080, 30 fps, 240 frames (8.0s)**.
 
 ## The eight exhibits
 
@@ -51,19 +56,23 @@ is self-contained and captioned, so any one cuts clean.
 src/
   index.ts              registerRoot entry
   Root.tsx              registers the 8 compositions + per-scene caption/palette
-  theme.ts              palette, fonts, timing constants
+  theme.ts              palette + timing constants
+  fonts.ts              self-hosted Playfair Display + Archivo (offline render)
   components/
-    SceneFrame.tsx      shared wrapper: grain, vignette, HUD, lower-third, caption
-    effects.tsx         Grain / Vignette / Scanlines / VhsHud / Stage helpers
-  scenes/               one animated SVG scene per exhibit
+    SceneFrame.tsx      shared wrapper: film treatment + editorial title block
+    film.tsx            FilmGrain / Vignette / Halation / LightLeak / GateWeave /
+                        Letterbox / Stage (with DOF + glow filters) helpers
+  scenes/               one realistically-lit SVG hero scene per exhibit
+public/fonts/           woff2 files (copied from @fontsource, checked in)
 scripts/render-all.mjs  batch renderer
 ```
 
 ## Editing tips
 
-- **Text on a scene** (the deadpan line, the exhibit title) lives in `Root.tsx`.
-- **Background mood** is the `bg` gradient pair per scene in `Root.tsx`.
+- **Text on a scene** (the deadpan line, the title) lives in `Root.tsx`.
+- **Key-light position** per scene is the `halation` prop in `Root.tsx`.
 - **Timing** (fps, 8-second length) is in `theme.ts`.
-- **Look** (grain strength, vignette, HUD) is in `components/effects.tsx`.
-- Each scene is pure SVG animated off `useCurrentFrame()`, so nothing depends
-  on external images or fonts — renders are fully offline and deterministic.
+- **Film look** (grain strength, vignette, halation, leaks, gate-weave,
+  letterbox) is in `components/film.tsx`; the title block is in `SceneFrame.tsx`.
+- Each scene is pure animated SVG driven by `useCurrentFrame()`, and the fonts
+  are self-hosted, so renders are fully offline and deterministic.

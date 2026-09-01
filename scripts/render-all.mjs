@@ -41,6 +41,10 @@ const run = async () => {
       serveUrl,
       codec: "h264",
       outputLocation,
+      // Low concurrency + generous timeout: the self-hosted fonts load per tab,
+      // and spinning up many tabs at once can stall those loads.
+      concurrency: 2,
+      timeoutInMilliseconds: 120000,
       onProgress: ({ progress }) => process.stdout.write(`\r  ${Math.round(progress * 100)}%   `),
     });
     console.log(`\n✓ ${id} done`);

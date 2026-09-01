@@ -1,75 +1,101 @@
 import React from "react";
 import { useCurrentFrame, interpolate } from "remotion";
-import { Stage, wobble } from "../components/effects";
+import { Stage, ContactShadow, usePushIn } from "../components/film";
 import { palette } from "../theme";
 
-/** EXHIBIT 01 — a kid drinking from the garden hose on a summer lawn. */
+/** EXHIBIT 01 — a brass hose nozzle, backlit at golden hour, water arcing in
+ * rim-lit droplets. Macro, shallow focus. No people; the memory is the light. */
 export const GardenHose: React.FC = () => {
   const f = useCurrentFrame();
-  const rayRot = (f * 0.4) % 360;
-  const dashOffset = -f * 26; // water flowing through the arc
-  const heat = 1 + Math.sin(f * 0.05) * 0.02;
+  const push = usePushIn(1.0, 1.06);
+  const flow = f * 0.9;
 
-  // A stream of droplets travelling along the arc + splashing at the mouth.
-  const drops = Array.from({ length: 10 }).map((_, i) => {
-    const t = ((f * 0.9 + i * 12) % 120) / 120;
-    const x = interpolate(t, [0, 1], [1520, 1015]);
-    const y = 470 + Math.sin(t * Math.PI) * -190 + t * 120;
-    return { x, y, r: 6 + (i % 3) * 2, o: 1 - t * 0.4 };
+  // Water droplets travelling along the arc, catching the backlight.
+  const drops = Array.from({ length: 34 }).map((_, i) => {
+    const t = ((flow + i * 7) % 130) / 130;
+    const x = interpolate(t, [0, 1], [640, 1580]);
+    const y = 640 - Math.sin(t * Math.PI) * 360 + t * 40;
+    const r = 3 + (i % 4) * 2.2;
+    const o = Math.sin(t * Math.PI) * 0.9 + 0.1;
+    return { x, y, r, o };
   });
 
   return (
     <Stage>
-      {/* Sun with rotating rays */}
-      <g transform={`translate(360 250) scale(${heat})`}>
-        <g transform={`rotate(${rayRot})`}>
-          {Array.from({ length: 12 }).map((_, i) => (
-            <rect key={i} x={-6} y={-230} width={12} height={90} rx={6} fill={palette.harvest} opacity={0.55} transform={`rotate(${i * 30})`} />
+      <defs>
+        <radialGradient id="gh-sun" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stopColor="#FFE9B0" />
+          <stop offset="35%" stopColor="#F2B24E" stopOpacity={0.8} />
+          <stop offset="100%" stopColor="#F2B24E" stopOpacity={0} />
+        </radialGradient>
+        <linearGradient id="gh-brass" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stopColor="#6b5324" />
+          <stop offset="42%" stopColor="#d9ad55" />
+          <stop offset="55%" stopColor="#f6e2a0" />
+          <stop offset="70%" stopColor="#b98b3e" />
+          <stop offset="100%" stopColor="#4a3a1c" />
+        </linearGradient>
+        <linearGradient id="gh-grip" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0%" stopColor="#20160b" />
+          <stop offset="50%" stopColor="#6b4a24" />
+          <stop offset="100%" stopColor="#1c130a" />
+        </linearGradient>
+      </defs>
+
+      {/* Dusk-backyard ground */}
+      <rect width={1920} height={1080} fill={palette.espresso} />
+      <rect y={520} width={1920} height={560} fill="#2a2c17" opacity={0.9} />
+
+      {/* Out-of-focus greenery + bokeh (blurred) */}
+      <g filter="url(#dof)" opacity={0.9}>
+        <rect y={560} width={1920} height={520} fill="#33361c" />
+        {Array.from({ length: 16 }).map((_, i) => {
+          const bx = (i * 173 + 60) % 1920;
+          const by = 700 + ((i * 97) % 320);
+          const s = 30 + (i % 5) * 26;
+          return <circle key={i} cx={bx} cy={by} r={s} fill={i % 3 ? "#5c6a2f" : palette.amber} opacity={0.14} />;
+        })}
+      </g>
+
+      {/* Sun flare, upper right, blooming */}
+      <circle cx={1500} cy={300} r={520} fill="url(#gh-sun)" />
+      <circle cx={1500} cy={300} r={90} fill="#FFF6DC" filter="url(#glowBig)" opacity={0.9} />
+
+      {/* Slow push-in group */}
+      <g transform={`translate(960 560) scale(${push}) translate(-960 -560)`}>
+        {/* Water arc — soft stream underlay */}
+        <path d="M660 650 C 900 240 1240 200 1560 470" fill="none" stroke="#cfe7ee" strokeWidth={26} strokeLinecap="round" opacity={0.14} filter="url(#dofSoft)" />
+        {/* rim-lit droplets */}
+        {drops.map((d, i) => (
+          <g key={i}>
+            <circle cx={d.x} cy={d.y} r={d.r * 2.4} fill="#FFE9C0" opacity={d.o * 0.25} filter="url(#glow)" />
+            <circle cx={d.x} cy={d.y} r={d.r} fill="#eaf6fb" opacity={d.o} />
+            <circle cx={d.x - d.r * 0.3} cy={d.y - d.r * 0.3} r={d.r * 0.4} fill="#fff" opacity={d.o} />
+          </g>
+        ))}
+
+        {/* Mist near nozzle */}
+        <ellipse cx={700} cy={640} rx={130} ry={70} fill="#dfeef2" opacity={0.08} filter="url(#glow)" />
+
+        {/* Brass nozzle, lower-left, angled up toward the arc */}
+        <g transform="translate(560 720) rotate(-34)">
+          <ContactShadow cx={40} cy={130} rx={150} ry={26} opacity={0.5} />
+          {/* rubber grip / hose end */}
+          <rect x={-40} y={40} width={150} height={70} rx={22} fill="url(#gh-grip)" />
+          {[0, 1, 2, 3].map((i) => (
+            <rect key={i} x={-30 + i * 30} y={40} width={8} height={70} rx={4} fill="#000" opacity={0.28} />
           ))}
+          {/* body */}
+          <rect x={70} y={44} width={230} height={62} rx={16} fill="url(#gh-brass)" />
+          {/* threaded collar */}
+          <rect x={286} y={40} width={30} height={70} rx={8} fill="url(#gh-brass)" />
+          {/* tapered tip */}
+          <path d="M316 52 L 402 66 L 402 84 L 316 98 Z" fill="url(#gh-brass)" />
+          <circle cx={402} cy={75} r={9} fill="#dff2f6" opacity={0.9} filter="url(#glow)" />
+          {/* specular streak */}
+          <rect x={80} y={50} width={210} height={7} rx={4} fill="#fff6d8" opacity={0.6} />
         </g>
-        <circle r={130} fill={palette.brandGold} />
-        <circle r={130} fill="none" stroke={palette.bone} strokeWidth={4} opacity={0.4} />
       </g>
-
-      {/* Rolling lawn */}
-      <path d={`M0 820 Q 960 740 1920 820 L1920 1080 L0 1080 Z`} fill={palette.avocado} />
-      <path d={`M0 900 Q 960 840 1920 900 L1920 1080 L0 1080 Z`} fill="#586330" />
-      {/* Grass blades */}
-      {Array.from({ length: 42 }).map((_, i) => {
-        const gx = 30 + i * 46;
-        const sway = wobble(f, "g" + i, 6, 0.2);
-        return <path key={i} d={`M${gx} 900 q ${sway} -40 ${sway * 0.4} -70`} stroke="#455026" strokeWidth={7} fill="none" strokeLinecap="round" opacity={0.8} />;
-      })}
-
-      {/* Spigot + hose entering from the right */}
-      <path d="M1920 560 C 1740 560 1720 470 1560 470" stroke={palette.rust} strokeWidth={30} fill="none" strokeLinecap="round" />
-      <rect x={1520} y={440} width={70} height={60} rx={10} fill={palette.brown} />
-
-      {/* Water arc */}
-      <path id="arc" d="M1540 470 C 1400 250 1180 250 1015 460" stroke="#BFE6F2" strokeWidth={20} fill="none" strokeLinecap="round" strokeDasharray="34 22" strokeDashoffset={dashOffset} opacity={0.9} />
-      <path d="M1540 470 C 1400 250 1180 250 1015 460" stroke="#FFFFFF" strokeWidth={6} fill="none" strokeLinecap="round" strokeDasharray="10 40" strokeDashoffset={dashOffset * 1.4} opacity={0.8} />
-      {drops.map((d, i) => (
-        <circle key={i} cx={d.x} cy={d.y} r={d.r} fill="#DFF3FA" opacity={d.o} />
-      ))}
-
-      {/* Kid silhouette, head tipped back under the arc */}
-      <g transform="translate(915 470)" fill={palette.darkBrown}>
-        {/* legs */}
-        <path d="M40 300 l -30 210 l 34 0 l 24 -160 l 22 160 l 34 0 l -22 -210 Z" />
-        {/* torso leaning back */}
-        <path d="M-10 120 q 60 -30 130 0 l 6 190 l -150 0 Z" />
-        {/* arm reaching up to the hose */}
-        <path d="M120 150 q 120 -40 190 -140" stroke={palette.darkBrown} strokeWidth={34} fill="none" strokeLinecap="round" />
-        {/* head tilted up */}
-        <circle cx={70} cy={70} r={62} />
-        <path d="M55 40 q 30 -22 70 -6" stroke={palette.brown} strokeWidth={16} fill="none" strokeLinecap="round" />
-      </g>
-
-      {/* Little splash sparkle at the mouth */}
-      {[0, 1, 2, 3].map((i) => {
-        const s = (Math.sin(f * 0.3 + i) + 1) / 2;
-        return <circle key={i} cx={1005 + i * 14 - 20} cy={455 + (i % 2) * 18} r={3 + s * 4} fill="#FFFFFF" opacity={0.5 + s * 0.5} />;
-      })}
     </Stage>
   );
 };

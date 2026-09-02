@@ -13,6 +13,7 @@ import {
   QUESTIONS,
   CARD_DURATION,
 } from "./scenes/ThreeQuestions";
+import { KitchenScene, kitchenSchema } from "./scenes/KitchenScene";
 
 export const RemotionRoot: React.FC = () => {
   return (
@@ -55,6 +56,21 @@ export const RemotionRoot: React.FC = () => {
           defaultProps={{ number: q.number, question: q.question }}
         />
       ))}
+      <Composition
+        id="KitchenScene"
+        component={KitchenScene}
+        durationInFrames={156}
+        fps={24}
+        width={1920}
+        height={1080}
+        schema={kitchenSchema}
+        defaultProps={{
+          src: "kitchen-scene.jpg",
+          steamX: 43,
+          steamY: 82,
+          steamIntensity: 1,
+        }}
+      />
     </>
   );
 };
